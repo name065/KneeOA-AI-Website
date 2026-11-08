@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081e2b">
+  <meta name="description" content="Sistem klasifikasi Knee Osteoarthritis 5 grade menggunakan EfficientNet-B3 dan interpretasi Grad-CAM.">
+  <title>KneeOA AI — Klasifikasi Osteoarthritis Lutut</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8L19 17ZM5 2l.7 1.3L7 4l-1.3.7L5 6l-.7-1.3L3 4l1.3-.7L5 2Z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-7-7 7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16m0 5v-5h5"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 15h12v7H6zM18 12h.01"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24"><path d="M12 18V5a3 3 0 0 0-5.7-1.3A4.5 4.5 0 0 0 3 10a4.7 4.7 0 0 0 1.7 8.2A4 4 0 0 0 12 18ZM12 18V5a3 3 0 0 1 5.7-1.3A4.5 4.5 0 0 1 21 10a4.7 4.7 0 0 1-1.7 8.2A4 4 0 0 1 12 18Z"/><path d="M7 9c2 0 3 1 3 3M17 9c-2 0-3 1-3 3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="container nav-inner">
+      <a class="brand" href="#beranda" aria-label="KneeOA AI ke beranda">
+        <span class="brand-symbol"><svg class="icon"><use href="#i-activity"/></svg></span>
+        <span class="brand-name">Knee<span>OA</span><small>AI</small></span>
+      </a>
+      <nav class="nav-links" aria-label="Navigasi utama">
+        <a class="nav-link active" href="#analisis">Analisis</a>
+        <a class="nav-link" href="#tingkatan">Tingkat OA</a>
+        <a class="nav-link" href="#cara-kerja">Cara Kerja</a>
+      </nav>
+      <div class="nav-right">
+        <div id="modelStatus" class="model-status is-checking" role="status" aria-live="polite">
+          <span class="status-dot"></span><span id="modelStatusText">Memeriksa model...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="beranda">
+    <section class="hero container">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-pulse"></span> AI-POWERED MEDICAL IMAGE ANALYSIS <svg class="icon icon-mini"><use href="#i-sparkles"/></svg></div>
+        <h1>Kenali kondisi lutut<br>melalui <span class="gradient-text">analisis AI.</span></h1>
+        <p>Platform klasifikasi osteoarthritis lutut berbasis citra X-ray menggunakan <strong>EfficientNet-B3</strong>, dilengkapi visualisasi <strong>Grad-CAM</strong> yang membantu menjelaskan prediksi model.</p>
+        <div class="hero-actions">
+          <a class="primary-link" href="#analisis">Mulai Analisis <svg class="icon"><use href="#i-arrow"/></svg></a>
+          <span class="quiet-label"><svg class="icon"><use href="#i-shield"/></svg> Prototipe penelitian</span>
+        </div>
+        <div class="hero-points">
+          <span><svg class="icon"><use href="#i-check"/></svg> 5 tingkat klasifikasi</span>
+          <span><svg class="icon"><use href="#i-check"/></svg> Explainable AI</span>
+          <span><svg class="icon"><use href="#i-check"/></svg> Analisis citra</span>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orb orb-one"></div><div class="orb orb-two"></div>
+        <div class="scan-display">
+          <div class="scan-head"><span><i></i><i></i><i></i></span><span>RADIOGRAPH ANALYSIS</span><span>AI · B3</span></div>
+          <div class="radiograph">
+            <div class="radiograph-cross cross-one"></div><div class="radiograph-cross cross-two"></div>
+            <svg viewBox="0 0 300 300" class="knee-diagram" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="boneFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e2f6f5" stop-opacity=".75"/><stop offset="1" stop-color="#7ba8c1" stop-opacity=".25"/></linearGradient></defs>
+              <path d="M105 34c-7 28-7 49-18 77-8 22-4 35 9 47 10 9 23 6 35-3l18-12 17 14c18 12 39 7 43-13 3-17-5-28-16-47-9-18-13-41-15-63" fill="url(#boneFill)" opacity=".37" stroke="#b7f6e5" stroke-width="2.5"/>
+              <path d="M94 181c-3 18 5 29 18 40 7 7 8 29 7 52m72-90c1 16-5 29-17 42-8 8-11 31-10 48" stroke="#d6fdf2" stroke-width="22" stroke-linecap="round" opacity=".43"/>
+              <path d="M89 167c14-9 26-10 40-8l19 8 20-7c18-5 34-1 44 8M109 182c16 9 32 10 42 10 19 0 36-6 47-12" stroke="#bbfff0" stroke-width="4" opacity=".85"/>
+              <ellipse cx="147" cy="168" rx="72" ry="35" fill="#4de0c3" fill-opacity=".1" stroke="#6fe9d3" stroke-dasharray="6 6"/>
+              <circle cx="150" cy="167" r="19" fill="#68e7cd" fill-opacity=".25" stroke="#88f7df" stroke-width="1.5"/>
+              <path d="M150 134v66M117 167h66" stroke="#96fae5" stroke-width="1.2" opacity=".5"/>
+              <path d="M114 35c-7 46-15 78-20 98M172 34c3 37 12 76 24 95" stroke="#b6f3e7" stroke-width="1.4" opacity=".6"/>
+            </svg>
+            <div class="scan-reticle reticle-tl"></div><div class="scan-reticle reticle-tr"></div><div class="scan-reticle reticle-bl"></div><div class="scan-reticle reticle-br"></div>
+            <span class="scan-tag scan-tag-left">SCAN 01</span><span class="scan-tag scan-tag-right">299–300 PX</span>
+          </div>
+          <div class="scan-bottom"><span><span class="online-dot"></span> Image processing</span><span>Grad-CAM ready</span></div>
+        </div>
+        <div class="floating-pill floating-pill-top"><span class="floating-icon"><svg class="icon"><use href="#i-brain"/></svg></span><span><strong>EfficientNet-B3</strong><small>Deep Learning Model</small></span></div>
+        <div class="floating-pill floating-pill-bottom"><span class="tiny-bars"><i></i><i></i><i></i><i></i></span><span><strong>5 Kelas</strong><small>Kellgren–Lawrence</small></span></div>
+      </div>
+    </section>
+
+    <section id="analisis" class="workspace-section">
+      <div class="container">
+        <div class="section-header workspace-intro">
+          <div><div class="section-kicker">WORKSPACE</div><h2>Mulai analisis gambar</h2><p>Unggah gambar radiografi lutut untuk melihat prediksi dan area perhatian model.</p></div>
+          <div class="workspace-tag"><svg class="icon"><use href="#i-lock"/></svg> Gambar diproses tanpa disimpan permanen</div>
+        </div>
+
+        <div class="workspace-grid">
+          <section class="panel upload-panel" aria-labelledby="uploadTitle">
+            <div class="panel-heading"><div class="heading-left"><span class="step-number">01</span><div><h3 id="uploadTitle">Unggah X-ray lutut</h3><p>Masukkan gambar yang akan dianalisis</p></div></div><svg class="icon panel-heading-icon"><use href="#i-upload"/></svg></div>
+            <input id="fileInput" class="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" aria-label="Pilih gambar X-ray lutut">
+            <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Pilih atau seret gambar X-ray lutut">
+              <div id="dropPlaceholder" class="drop-placeholder">
+                <div class="upload-icon"><svg class="icon"><use href="#i-image"/></svg><span class="upload-plus">+</span></div>
+                <h4>Seret &amp; lepas gambar di sini</h4>
+                <p>atau klik untuk memilih file dari perangkat</p>
+                <span class="browse-button">Pilih Gambar <svg class="icon"><use href="#i-arrow"/></svg></span>
+                <small>PNG, JPG, atau WEBP · Maks. 10 MB</small>
+              </div>
+              <div id="filePreview" class="file-preview" hidden>
+                <img id="uploadedImage" alt="Pratinjau gambar X-ray yang dipilih">
+                <div class="file-meta"><span id="uploadedName"></span><small id="uploadedSize"></small></div>
+                <span class="change-file">Klik untuk mengganti gambar</span>
+              </div>
+            </div>
+            <div class="upload-guidance"><div class="guidance-head"><svg class="icon"><use href="#i-info"/></svg> Tips gambar yang baik</div><p>Gunakan X-ray lutut yang jelas, fokus pada area sendi, dan minim artefak. Pastikan gambar tidak memuat identitas pasien.</p></div>
+            <div id="alertBox" class="alert" role="alert" hidden><svg class="icon"><use href="#i-info"/></svg><span id="alertText"></span><button id="dismissAlert" type="button" aria-label="Tutup pesan"><svg class="icon"><use href="#i-close"/></svg></button></div>
+            <button id="analyzeBtn" type="button" class="analyze-btn" disabled><svg class="icon" id="analyzeIcon"><use href="#i-sparkles"/></svg><span id="analyzeBtnText">Analisis Gambar</span><svg class="icon arrow-right"><use href="#i-arrow"/></svg></button>
+            <div class="processing-note"><svg class="icon"><use href="#i-shield"/></svg> Hasil AI bersifat pendukung penelitian, bukan diagnosis medis.</div>
+          </section>
+
+          <section class="panel results-panel" id="resultsPanel" aria-labelledby="resultTitle">
+            <div class="panel-heading"><div class="heading-left"><span class="step-number step-accent">02</span><div><h3 id="resultTitle">Hasil klasifikasi</h3><p>Prediksi tingkat osteoarthritis</p></div></div><span class="results-heading-tag">AI RESULT</span></div>
+            <div id="resultEmpty" class="result-empty">
+              <div class="empty-visual"><div class="empty-ring ring-one"></div><div class="empty-ring ring-two"></div><div class="empty-ring ring-three"></div><svg class="icon"><use href="#i-activity"/></svg></div>
+              <h4>Siap untuk menganalisis</h4><p>Hasil klasifikasi, skor probabilitas, dan visualisasi Grad-CAM akan tampil setelah gambar diproses.</p>
+              <div class="empty-features"><span><svg class="icon"><use href="#i-check"/></svg> Prediksi KL grade</span><span><svg class="icon"><use href="#i-check"/></svg> Confidence score</span><span><svg class="icon"><use href="#i-check"/></svg> Grad-CAM</span></div>
+            </div>
+            <div id="resultLoading" class="result-loading" hidden><div class="loading-spinner"></div><h4>Menganalisis gambar...</h4><p>Model sedang memproses gambar dan membuat interpretasi.</p></div>
+            <div id="resultContent" class="result-content" hidden>
+              <div class="result-banner"><div><div class="result-kicker"><span class="result-bullet"></span> HASIL PREDIKSI</div><div class="result-grade" id="resultGrade">Grade —</div><div class="result-severity" id="resultSeverity">—</div></div><div class="confidence-bubble"><strong id="confidenceValue">—</strong><small>Confidence</small></div></div>
+              <p id="gradeDescription" class="grade-description"></p>
+              <div class="prob-head"><h4>Probabilitas setiap kelas</h4><span>KL Grade 0–4</span></div>
+              <div id="probabilityBars" class="probability-bars"></div>
+              <div class="result-actions"><button id="printBtn" class="subtle-btn" type="button"><svg class="icon"><use href="#i-printer"/></svg> Cetak / Simpan PDF</button><button id="resetBtn" class="subtle-btn" type="button"><svg class="icon"><use href="#i-refresh"/></svg> Analisis Baru</button></div>
+              <div class="result-model-note" id="resultModelNote"></div>
+            </div>
+          </section>
+        </div>
+        <section id="visualization" class="visualization-panel" aria-labelledby="visualizationTitle" hidden>
+          <div class="viz-heading"><div><div class="section-kicker">EXPLAINABLE AI</div><h3 id="visualizationTitle">Visualisasi Grad-CAM</h3><p>Area berwarna hangat menunjukkan bagian gambar yang lebih berkontribusi terhadap prediksi model.</p></div><span class="viz-label"><svg class="icon"><use href="#i-eye"/></svg> Model Interpretation</span></div>
+          <div id="gradcamNotice" class="gradcam-notice" hidden></div>
+          <div id="vizImages" class="visualization-images"><figure><div class="viz-image-frame"><img id="originalResultImg" alt="Gambar X-ray setelah disesuaikan dengan ukuran model"></div><figcaption><span>01</span> Gambar input model</figcaption></figure><figure class="gradcam-only"><div class="viz-image-frame"><img id="heatmapResultImg" alt="Peta panas Grad-CAM"></div><figcaption><span>02</span> Grad-CAM heatmap</figcaption></figure><figure class="gradcam-only"><div class="viz-image-frame"><img id="overlayResultImg" alt="Tumpukan Grad-CAM dengan gambar X-ray"></div><figcaption><span>03</span> Grad-CAM overlay</figcaption></figure></div>
+          <div class="viz-footnote"><svg class="icon"><use href="#i-info"/></svg> Grad-CAM menjelaskan perhatian model, bukan lokasi pasti kelainan atau bukti diagnosis. Gambar input disesuaikan dengan ukuran model.</div>
+        </section>
+      </div>
+    </section>
+
+    <section id="tingkatan" class="grades-section container">
+      <div class="centered-section"><div class="section-kicker">KL GRADING SYSTEM</div><h2>Memahami 5 tingkat osteoarthritis</h2><p>Sistem mengikuti skala Kellgren–Lawrence untuk pengelompokan temuan radiografi lutut.</p></div>
+      <div class="grade-grid">
+        <article class="grade-card grade-card-0"><div class="grade-card-top"><span class="grade-mini">KL 0</span><span class="grade-mark"></span></div><strong>Normal</strong><p>Tidak terlihat tanda OA yang jelas pada radiografi.</p><span class="grade-card-bottom">Grade 0 <svg class="icon"><use href="#i-arrow"/></svg></span></article>
+        <article class="grade-card grade-card-1"><div class="grade-card-top"><span class="grade-mini">KL 1</span><span class="grade-mark"></span></div><strong>Doubtful</strong><p>Perubahan sendi masih meragukan atau sangat minimal.</p><span class="grade-card-bottom">Grade 1 <svg class="icon"><use href="#i-arrow"/></svg></span></article>
+        <article class="grade-card grade-card-2"><div class="grade-card-top"><span class="grade-mini">KL 2</span><span class="grade-mark"></span></div><strong>Mild</strong><p>Osteofit jelas, kemungkinan celah sendi menyempit.</p><span class="grade-card-bottom">Grade 2 <svg class="icon"><use href="#i-arrow"/></svg></span></article>
+        <article class="grade-card grade-card-3"><div class="grade-card-top"><span class="grade-mini">KL 3</span><span class="grade-mark"></span></div><strong>Moderate</strong><p>Penyempitan celah sendi dan osteofit lebih nyata.</p><span class="grade-card-bottom">Grade 3 <svg class="icon"><use href="#i-arrow"/></svg></span></article>
+        <article class="grade-card grade-card-4"><div class="grade-card-top"><span class="grade-mini">KL 4</span><span class="grade-mark"></span></div><strong>Severe</strong><p>Perubahan struktural dan penyempitan sendi berat.</p><span class="grade-card-bottom">Grade 4 <svg class="icon"><use href="#i-arrow"/></svg></span></article>
+      </div>
+    </section>
+
+    <section id="cara-kerja" class="how-section"><div class="container how-inner"><div class="how-copy"><div class="section-kicker">HOW IT WORKS</div><h2>Proses sederhana,<br><span>analisis bermakna.</span></h2><p>Dari gambar X-ray hingga interpretasi visual, semuanya dalam satu alur yang mudah dipahami.</p><div class="research-note"><svg class="icon"><use href="#i-info"/></svg><span>Model berasal dari notebook training, testing, dan Grad-CAM yang Anda sediakan.</span></div></div><div class="steps-list"><div class="how-step"><span class="how-step-no">01</span><div><h3>Unggah citra X-ray</h3><p>Gambar diubah ke format RGB dan ukuran input model.</p></div><span class="step-connector"></span></div><div class="how-step"><span class="how-step-no">02</span><div><h3>Prediksi dengan EfficientNet-B3</h3><p>Model menghasilkan probabilitas untuk lima grade Kellgren–Lawrence.</p></div><span class="step-connector"></span></div><div class="how-step"><span class="how-step-no">03</span><div><h3>Interpretasi dengan Grad-CAM</h3><p>Heatmap menunjukkan fitur visual yang memengaruhi keputusan model.</p></div></div></div></div></section>
+
+    <section class="disclaimer container"><span class="disclaimer-icon"><svg class="icon"><use href="#i-shield"/></svg></span><div><h3>Catatan penggunaan medis</h3><p>Website ini dibuat untuk keperluan penelitian dan pendidikan. Klasifikasi otomatis bukan diagnosis klinis, dan confidence score tidak sama dengan kepastian medis. Interpretasi kondisi pasien tetap memerlukan tenaga kesehatan yang berkompeten.</p></div></section>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-inner"><div class="footer-brand"><span class="brand-symbol"><svg class="icon"><use href="#i-activity"/></svg></span><span>Knee<span>OA</span> AI</span></div><span>Powered by EfficientNet-B3 &amp; Grad-CAM</span><span>Research prototype · 2026</span></div></footer>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

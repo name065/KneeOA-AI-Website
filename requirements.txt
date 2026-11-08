@@ -1,0 +1,6 @@
+Flask>=3.0,<4
+numpy>=1.26,<3
+Pillow>=10.0,<13
+# Use an appropriate TensorFlow version compatible with your saved model and Python.
+# On Windows, use WSL2 or a supported Python environment if installation fails.
+tensorflow-cpu>=2.16,<2.21
